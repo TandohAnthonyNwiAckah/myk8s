@@ -66,3 +66,10 @@ kubectl get nodes
 ```bash
 kubectl get pods
 ```
+
+
+### Generate Deployment (dry-run):
+
+```bash
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > deployment.yaml
+```
