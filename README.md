@@ -24,6 +24,8 @@ Modern applications are often built using containers (e.g., Docker). While conta
 - **Service**: Exposes your application to network traffic.
 
 
+> Horizontal autoscaling in Kubernetes is not enabled by default. To use it, you must install an add-on called metrics-server, which provides resource metrics that the Horizontal Pod Autoscaler relies on.
+
 
 ## ⚙️ Getting Started
 
