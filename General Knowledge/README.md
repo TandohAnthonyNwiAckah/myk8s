@@ -1,92 +1,204 @@
-## General Knowledge
+# Kubernetes & Cloud-Native Notes
 
-- ✅  A service mesh’s core role is to manage service-to-service communication, which primarily includes traffic routing, service discovery, and load balancing.
+Short, practical reference covering common Kubernetes, GitOps, and service-mesh concepts.
 
-- ✅ A service mesh like Istio focuses on traffic management, security, and observability, not scaling workloads.
-It does handle advanced load balancing, retries, circuit breaking, mTLS, and intelligent routing.
+## Table of contents
+- [Purpose](#purpose)
+- [Quick Concepts](#quick-concepts)
+- [Kubernetes Cheatsheet](#kubernetes-cheatsheet)
+- [Observability & Networking](#observability--networking)
+- [GitOps & Operators](#gitops--operators)
+- [Examples & Commands](#examples--commands)
+- [Diagram](#diagram)
+- [Printable Cheat-sheet](#printable-cheat-sheet)
 
-- ✅  The Horizontal Pod Autoscaler (HPA) in Kubernetes can automatically scale the number of pods in a Deployment or ReplicaSet based on CPU utilization, memory utilization, or even custom metrics (such as application-specific metrics provided through a metrics server or external monitoring system).
+## Purpose
+Capture concise reminders and best-practice notes for Kubernetes, service meshes, autoscaling, and related cloud-native topics.
 
-- ✅  A NetworkPolicy = rules that control Pod-to-Pod and Pod-to-network traffic using labels, IPs, and ports.
+## Quick Concepts
+- Service mesh: manages service-to-service communication (routing, retries, circuit breaking, mTLS, observability).
+- HPA (Horizontal Pod Autoscaler): scales replicas by CPU/memory or custom metrics.
+- VPA (Vertical Pod Autoscaler): adjusts resource requests/limits for Pods (not replica count).
+- Cluster Autoscaler: adds/removes nodes based on scheduling needs.
+- CNI (Container Network Interface): plugin model for Kubernetes networking.
+- StorageClass + PVC: StorageClass describes provisioning; PVC requests storage which can be dynamically provisioned.
 
-- ✅ The Container Network Interface (CNI) is a Kubernetes standard for networking plugins.
-- > CNI = rules/interface
-- > Plugins = execution/ implementation
+## Kubernetes Cheatsheet
+- Pod QoS: `Guaranteed` requires requests == limits for CPU and memory on all containers.
+- OOMKilled: container exceeded memory limit and was terminated by the kernel OOM killer.
+- CPU throttling: enforced only when a CPU limit is configured.
+- `maxUnavailable` / `maxSurge`: control rolling update disruption and extra pods during deploys.
 
-- ✅ A StorageClass in Kubernetes defines how storage should be provisioned (e.g., which provisioner to use, parameters like disk type, replication, etc.). When a PVC references a StorageClass, Kubernetes can automatically create a matching PersistentVolume instead of requiring one to be pre-created.
+## Observability & Networking
+- `kube-proxy`: implements Service networking rules (iptables or IPVS) on each node.
+- `CoreDNS`: cluster DNS resolver for services (`*.svc.cluster.local`).
+- Prometheus: does service discovery and scrapes targets; use `node_exporter` and `kube-state-metrics` for node/state metrics.
+- Headless Service: no ClusterIP; DNS returns Pod IPs for direct discovery.
 
-- ✅ When a container is terminated with an OOMKilled status in Kubernetes, it means the process was killed by the Out-Of-Memory (OOM) killer because it used more memory than its defined limit. Kubernetes enforces memory limits strictly, so exceeding them results in the container being terminated and restarted.
+Patterns for resiliency:
+- Rate limiting: protect services from overload.
+- Circuit breaker: stop repeated calls to failing services.
+- Bulkhead: isolate failures across components.
+- Load leveling: use queues to smooth bursts.
 
-- ✅ kube-proxy runs on each node and implements the Kubernetes Service abstraction by maintaining network rules (typically via iptables or IPVS). These rules enable traffic routing from inside or outside the cluster to the appropriate Pods.
+## GitOps & Operators
+- GitOps model: Git (desired state) → Cluster (reconciler pulls from Git and applies changes). One-way flow.
+- Role vs ClusterRole vs Bindings:
+  - `Role` (namespace-scoped), `ClusterRole` (cluster-scoped permissions).
+  - `RoleBinding` grants a Role/ClusterRole within a namespace.
+  - `ClusterRoleBinding` grants a ClusterRole cluster-wide.
+- Operators: extend Kubernetes APIs via CRDs and automate lifecycle for custom resources.
 
-- ✅ A Service of type LoadBalancer exposes a Service externally, while an Ingress provides more advanced routing (like host/path-based rules), but still relies on Services as the backend—not Pods directly.
+## Examples & Commands
+Practical, copyable snippets for common tasks.
 
-- ✅ In Kubernetes, DNS resolution for Services inside the cluster is handled by CoreDNS. When a Pod tries to resolve something like my-service.my-namespace.svc.cluster.local, the request goes to the cluster DNS service (CoreDNS), which returns the appropriate ClusterIP.
+### Kubectl
+```bash
+# show pods and their resources
+kubectl get pods -o wide
 
-- ✅ In Domain-Driven Design (DDD), a bounded context defines clear boundaries where a specific domain model applies. Aligning microservices with these bounded contexts is considered a best practice.
+# describe an OOMKilled pod
+kubectl describe pod <pod-name> -n <namespace>
 
-- ✅ CPU throttling in Kubernetes is enforced only when a CPU limit is defined. Without a limit, the container can use as much CPU as the node allows.
+# horizontal autoscaler using CPU
+kubectl autoscale deployment my-app --cpu-percent=70 --min=2 --max=10
 
-- ✅ Cluster Autoscaler: scales nodes
+# apply a NetworkPolicy (example file: networkpolicy.yaml)
+kubectl apply -f networkpolicy.yaml -n my-namespace
 
-- ✅ Vertical Pod Autoscaler (VPA): adjusts resource requests/limits, not replica count.
+# rollout status while updating a deployment
+kubectl rollout status deployment/my-app -n my-namespace
+```
 
-- ✅ Horizontal Pod Autoscaler (HPA): scales based on CPU/memory or custom metrics
+NetworkPolicy example (networkpolicy.yaml):
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-frontend
+spec:
+  podSelector:
+    matchLabels:
+      role: backend
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+```
 
-- ✅ Kubernetes Event-Driven Autoscaling (KEDA): event-driven autoscaling.
+### Ingress (NGINX) example
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+```
 
-- ✅ A Helm chart is basically a packaged set of Kubernetes resources that you can install, reuse, and share. Think of it like this: instead of manually writing and applying a bunch of YAML files for deployments, services, configs, etc., you bundle everything into one reusable package called a chart.
+### Istio VirtualService snippet
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: my-virtualservice
+spec:
+  hosts:
+  - my-service
+  http:
+  - route:
+    - destination:
+        host: my-service
+        subset: v1
+      weight: 80
+    - destination:
+        host: my-service
+        subset: v2
+      weight: 20
+```
 
-- Helm = package manager (like apt, npm)
+### Prometheus scrape config (excerpt)
+```yaml
+scrape_configs:
+  - job_name: 'kubernetes-pods'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+```
 
-- Helm chart = installable package (like a .deb or npm package)
+### Helm
+```bash
+# install a chart with values file
+helm install myapp ./chart -f values.yaml
 
-- ✅ In Kubernetes, Operators extend the API by introducing new object types, and this is done through Custom Resource Definitions (CRDs). A CRD lets you define your own resource (kind, API version, schema), which Kubernetes then treats like built-in objects. The Operator watches these custom resources and acts on them.
+# upgrade
+helm upgrade myapp ./chart -f values.yaml
 
-- ✅ Rate Limiting – helps prevent overload by controlling incoming traffic
-- ✅ Circuit Breaker – stops repeated calls to failing services and allows recovery
-- ✅ Bulkhead – isolates components so failures don’t spread across the system
+# template output (inspect generated manifests)
+helm template myapp ./chart -f values.yaml
+```
 
-- ✅ Load Leveling – smooths traffic spikes (often via queues), improving stability under stress
+### Quick troubleshooting commands
+```bash
+# view logs for a pod
+kubectl logs -f pod/my-pod -n my-namespace
 
-- ✅ maxUnavailable determines the maximum number of Pods that can be unavailable during the update.
-How many Pods are allowed to be down / unavailable
+# get events to diagnose scheduling/oom issues
+kubectl get events -n my-namespace --sort-by='.lastTimestamp'
+```
 
+## Diagram
+Below is a simple GitOps + service mesh flow; renderers that support Mermaid will show this visually.
 
-- ✅ maxSurge determines the maximum number of Pods that can be created above the desired count.How many extra Pods can be created above the desired number
+```mermaid
+flowchart LR
+  subgraph DEV
+    A[Git repo: manifests & Helm] -->|push| B[Git Branch]
+  end
+  B --> C[Reconciler (Flux/ArgoCD) in Cluster]
+  C --> D[Apply resources]
+  D --> E[Services & Deployments]
+  E --> F[Service Mesh (Istio/Linkerd)]
+  F --> G[Observability: Prometheus / Grafana]
+  style A fill:#f9f,stroke:#333,stroke-width:1px
+```
 
-- > Surge goes up, Unavailable goes down
+## Printable Cheat-sheet
+A compact one-page listing to print or pin.
 
-- ✅  GitOps direction is one-way:
-Git → Cluster (not Cluster → Git).
-GitOps is fundamentally pull-based. The agent runs inside the Kubernetes cluster. It continuously pulls configuration from a Git repository.It compares Git (desired state) vs cluster (live state). 
-It then reconciles the cluster to match Git.
+- Deploy
+  - `kubectl apply -f <file>`
+  - `helm install <name> ./chart -f values.yaml`
+- Inspect
+  - `kubectl get pods -n <ns> -o wide`
+  - `kubectl describe pod <pod>`
+  - `kubectl logs -f <pod>`
+- Autoscaling
+  - `kubectl autoscale deployment my-app --cpu-percent=70 --min=2 --max=10`
+- Debugging
+  - `kubectl get events -n <ns>`
+  - `kubectl top pods` (metrics-server required)
+- Networking
+  - `kubectl get svc,ingress -n <ns>`
+  - Use NetworkPolicy to restrict pod-to-pod traffic
 
-
-
-- ✅ A RoleBinding is namespace-scoped, meaning it grants permissions only within a specific namespace.
-If you want to grant permissions across all namespaces (cluster-wide), you would use a ClusterRoleBinding, not a RoleBinding.
-
-- Roles/ClusterRoles define permissions, Bindings assign them.
-
-- ClusterRoleBinding → ONLY works with ClusterRole
-
-- A RoleBinding can use a ClusterRole, but it does NOT make it cluster-wide.
-
-- ✅ A Headless Service in Kubernetes is a Service that does not get a ClusterIP and therefore does not provide load balancing or a single virtual IP.
-Instead, it gives you direct access to the individual Pod IPs.
-A Headless Service = DNS-based service discovery without load balancing.
-Inside Kubernetes, service discovery is DNS-based, not IP-based.
-
-
-- ✅ The Prometheus server is the core component responsible for:
-Service discovery (finding targets like Pods, Services, Nodes via Kubernetes APIs).
-Scraping metrics from those targets at defined intervals (via scrape_configs)
-- Node Exporter → exposes node-level metrics.
-- kube-state-metrics → exposes Kubernetes object state metrics.
-
-
-- ✅ To get a Guaranteed QoS class in Kubernetes, the rule is strict:
-Every container in the Pod must have CPU and memory requests set, and those requests must be exactly equal to their limits.
-
-- ✅ An API Gateway sits at the edge of a microservices system and acts as a reverse proxy that routes client requests to the appropriate services. It centralizes concerns like authentication, rate limiting, routing, and aggregation—making it easier for clients to interact with a complex backend.
+---
