@@ -48,13 +48,12 @@ Patterns for resiliency:
   - `ClusterRoleBinding` grants a ClusterRole cluster-wide.
 - Operators: extend Kubernetes APIs via CRDs and automate lifecycle for custom resources.
 
-<<<<<<< HEAD
+
 - ✅ A Service of type LoadBalancer exposes a Service externally, while an Ingress provides more advanced routing (like host/path-based rules), but still relies on Services as the backend—not Pods directly.
 A LoadBalancer Service gives you an external IP, but does not handle TLS termination or routing rules by itself.
 =======
 ## Examples & Commands
 Practical, copyable snippets for common tasks.
->>>>>>> bb0b67618dc51ea1037de941f653fcc5141765e2
 
 ### Kubectl
 ```bash
@@ -191,7 +190,6 @@ A compact one-page listing to print or pin.
 
 ---
 
-<<<<<<< HEAD
 - ✅ A RoleBinding is namespace-scoped, meaning it grants permissions only within a specific namespace.
 If you want to grant permissions across all namespaces (cluster-wide), you would use a ClusterRoleBinding, not a RoleBinding.
 
@@ -257,5 +255,3 @@ Every container in the Pod must have CPU and memory requests set, and those requ
 This is the most useful for lifecycle diagnostics—it shows events, conditions, scheduling issues, container states, and errors.
 
 - runC is the native runtime for Open Container Initiative (OCI) compliant.
-=======
->>>>>>> bb0b67618dc51ea1037de941f653fcc5141765e2
