@@ -9,7 +9,6 @@ Short, practical reference covering common Kubernetes, GitOps, and service-mesh 
 - [Observability & Networking](#observability--networking)
 - [GitOps & Operators](#gitops--operators)
 - [Examples & Commands](#examples--commands)
-- [Diagram](#diagram)
 - [Printable Cheat-sheet](#printable-cheat-sheet)
 
 ## Purpose
@@ -49,8 +48,13 @@ Patterns for resiliency:
   - `ClusterRoleBinding` grants a ClusterRole cluster-wide.
 - Operators: extend Kubernetes APIs via CRDs and automate lifecycle for custom resources.
 
+<<<<<<< HEAD
+- ✅ A Service of type LoadBalancer exposes a Service externally, while an Ingress provides more advanced routing (like host/path-based rules), but still relies on Services as the backend—not Pods directly.
+A LoadBalancer Service gives you an external IP, but does not handle TLS termination or routing rules by itself.
+=======
 ## Examples & Commands
 Practical, copyable snippets for common tasks.
+>>>>>>> bb0b67618dc51ea1037de941f653fcc5141765e2
 
 ### Kubectl
 ```bash
@@ -166,22 +170,6 @@ kubectl logs -f pod/my-pod -n my-namespace
 kubectl get events -n my-namespace --sort-by='.lastTimestamp'
 ```
 
-## Diagram
-Below is a simple GitOps + service mesh flow; renderers that support Mermaid will show this visually.
-
-```mermaid
-flowchart LR
-  subgraph DEV
-    A[Git repo: manifests & Helm] -->|push| B[Git Branch]
-  end
-  B --> C[Reconciler (Flux/ArgoCD) in Cluster]
-  C --> D[Apply resources]
-  D --> E[Services & Deployments]
-  E --> F[Service Mesh (Istio/Linkerd)]
-  F --> G[Observability: Prometheus / Grafana]
-  style A fill:#f9f,stroke:#333,stroke-width:1px
-```
-
 ## Printable Cheat-sheet
 A compact one-page listing to print or pin.
 
@@ -202,3 +190,72 @@ A compact one-page listing to print or pin.
   - Use NetworkPolicy to restrict pod-to-pod traffic
 
 ---
+
+<<<<<<< HEAD
+- ✅ A RoleBinding is namespace-scoped, meaning it grants permissions only within a specific namespace.
+If you want to grant permissions across all namespaces (cluster-wide), you would use a ClusterRoleBinding, not a RoleBinding.
+
+- Roles/ClusterRoles define permissions, Bindings assign them.
+
+- ClusterRoleBinding → ONLY works with ClusterRole
+
+- A RoleBinding can use a ClusterRole, but it does NOT make it cluster-wide.
+
+- ✅ A Headless Service in Kubernetes is a Service that does not get a ClusterIP and therefore does not provide load balancing or a single virtual IP.
+Instead, it gives you direct access to the individual Pod IPs.
+A Headless Service = DNS-based service discovery without load balancing.
+Inside Kubernetes, service discovery is DNS-based, not IP-based.
+
+
+- ✅ The Prometheus server is the core component responsible for:
+Service discovery (finding targets like Pods, Services, Nodes via Kubernetes APIs).
+Scraping metrics from those targets at defined intervals (via scrape_configs)
+- Node Exporter → exposes node-level metrics.
+- kube-state-metrics → exposes Kubernetes object state metrics.
+
+
+- ✅ To get a Guaranteed QoS class in Kubernetes, the rule is strict:
+Every container in the Pod must have CPU and memory requests set, and those requests must be exactly equal to their limits.
+
+- ✅ An API Gateway sits at the edge of a microservices system and acts as a reverse proxy that routes client requests to the appropriate services. It centralizes concerns like authentication, rate limiting, routing, and aggregation—making it easier for clients to interact with a complex backend.
+
+
+- ✅ Kubernetes Secrets storage are base64-encoded by default,
+
+- Metrics → Prometheus
+
+- Dashboards/Visualization → Grafana
+
+- Tracing (request flow) → Jaeger
+
+- Logging → Fluentd
+
+- Networking / Service Mesh → Envoy
+
+
+- ✅ CAP Theorem.
+
+- C = Consistency (all nodes see same data)
+- A = Availability (every request gets a response)
+- P = Partition Tolerance (system works despite network splits)
+
+- > Partition tolerance is mandatory in distributed systems
+
+- So you choose:
+- CP (Consistency + Partition tolerance) → e.g., strong DBs
+- AP (Availability + Partition tolerance) → e.g., DNS, Cassandra
+
+- > You cannot have all 3 simultaneously
+
+- ResourceQuota sets overall limits per namespace.
+
+- LimitRange sets per-Pod/container defaults and limits, not totals.
+
+- The kubelet runs on each node and ensures containers are started and stay healthy.
+
+- ✔️ kubectl describe pod <pod-name>
+This is the most useful for lifecycle diagnostics—it shows events, conditions, scheduling issues, container states, and errors.
+
+- runC is the native runtime for Open Container Initiative (OCI) compliant.
+=======
+>>>>>>> bb0b67618dc51ea1037de941f653fcc5141765e2
